@@ -1,7 +1,7 @@
-C = g++
+CC = g++
 CFLAGS = -Wall -Wextra -Werror -g
 
-NAME = matt_daemon
+NAME = Matt_daemon
 FILES = main.cpp
 
 SRCS_DIR = srcs
