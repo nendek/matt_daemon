@@ -10,4 +10,15 @@
 # include <sys/types.h>
 # include <sys/file.h>
 
+/*------------------ lock_daemon -------------------*/
+int		lock_daemon(int *fd);
+void		unlock_deamon(int *fd);
+
+/*------------------ cred_daemon -------------------*/
+int		check_credentials(void);
+
+/*------------------ sig_daemon -------------------*/
+void		sigsig(void);
+void		sig_handler(int signo);
+
 #endif

@@ -2,7 +2,7 @@ CC = g++
 CFLAGS = -Wall -Wextra -Werror -g
 
 NAME = Matt_daemon
-FILES = main.cpp
+FILES = main.cpp sig_daemon.cpp cred_daemon.cpp lock_daemon.cpp
 
 SRCS_DIR = srcs
 SRCS = $(addprefix $(SRCS_DIR)/,$(FILES))
