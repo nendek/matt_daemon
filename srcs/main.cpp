@@ -11,6 +11,7 @@ int		main(void)
 	pid_t	pid;
 	pid_t	sid;
 	int	fd;
+	int	sock;
 
 	fd = 0;
 	if (check_credentials())
@@ -37,6 +38,9 @@ int		main(void)
 		//close(STDIN_FILENO);
 		//close(STDOUT_FILENO);
 		//close(STDERR_FILENO);
+		if ((sock = create_server()) < 0)
+			return (EXIT_FAILURE);
+
 		while (1);
 		quit(&fd);
 	}
