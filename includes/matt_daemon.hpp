@@ -10,7 +10,7 @@
 # include <sys/types.h>
 # include <sys/file.h>
 
-# define SRV_PORT 42
+# define SRV_PORT 4242
 # define MAXMSG 128
 
 /*------------------ lock_daemon ------------------*/

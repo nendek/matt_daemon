@@ -21,4 +21,5 @@ void		unlock_deamon(int *fd)
 	flock(*fd, LOCK_UN);
 	close(*fd);
 	*fd = 0;
+	unlink("/var/lock/matt_daemon.lock");
 }
