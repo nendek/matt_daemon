@@ -40,8 +40,7 @@ int		main(void)
 		//close(STDERR_FILENO);
 		if ((sock = create_server()) < 0)
 			return (EXIT_FAILURE);
-
-		while (1);
+		run_server(sock);
 		quit(&fd);
 	}
 	return (EXIT_SUCCESS);

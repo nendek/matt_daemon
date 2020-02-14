@@ -11,6 +11,7 @@
 # include <sys/file.h>
 
 # define SRV_PORT 42
+# define MAXMSG 128
 
 /*------------------ lock_daemon ------------------*/
 int		lock_daemon(int *fd);
