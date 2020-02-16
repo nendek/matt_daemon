@@ -1,7 +1,13 @@
-#ifndef REPORTER_HPP
-# define REPORTER_HPP
+#ifndef	_REPORTER_HPP_
+# define _REPORTER_HPP_
 
 # include <string>
+# include <fstream>
+# include <locale>
+# include <ctime>
+# include <iostream>
+
+enum logLevel { error, info, msg };
 
 class Tintin_reporter
 {
@@ -13,8 +19,13 @@ class Tintin_reporter
 
 		std::string		getPathname( void ) const;
 
+		void			log( logLevel type, std::string msg );
+		
 	private:
-		std::string _pathname;
+		std::string	formatTimeNow( void ) const;
+
+		std::string	_pathname;
+		std::ofstream	_fs;
 
 		Tintin_reporter( void );
 };

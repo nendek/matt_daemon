@@ -1,5 +1,5 @@
-#ifndef MATT_DEAMON_HPP
-# define MATT_DEAMON_HPP
+#ifndef _MATT_DEAMON_HPP_
+# define _MATT_DEAMON_HPP_
 
 # include <iostream>
 
@@ -9,6 +9,8 @@
 # include <sys/stat.h>
 # include <sys/types.h>
 # include <sys/file.h>
+
+#include "reporter.hpp"
 
 # define SRV_PORT 4242
 # define MAXMSG 128
@@ -22,7 +24,7 @@ int		check_credentials(void);
 void		sigsig(void);
 void		sig_handler(int signo);
 /*------------------ sig_daemon -------------------*/
-int		create_server(void);
-int		run_server(int sock);
+int		create_server(Tintin_reporter *log);
+int		run_server(const int *sock, Tintin_reporter *log);
 
 #endif
