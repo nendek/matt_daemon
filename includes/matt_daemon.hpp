@@ -18,6 +18,9 @@
 
 # define SRV_PORT 4242
 # define MAXMSG 128
+# define PATH_LOG "/var/log/matt_daemon"
+# define PATH_FILE_LOG "/var/log/matt_daemon/matt_daemon.log"
+# define PATH_FILE_LOCK "/var/lock/matt_daemon.lock"
 
 /*------------------ lock_daemon ------------------*/
 int		lock_daemon(int *fd);

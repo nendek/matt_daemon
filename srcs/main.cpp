@@ -72,14 +72,14 @@ int			main(void)
 	{
 		sigsig();
 		umask(0);
-		dir = opendir("/var/log/matt_daemon");
+		dir = opendir(PATH_LOG);
 		try
 		{
 			if (!dir)
 			{
 				if (errno == ENOENT)
 				{
-					if (mkdir("/var/log/matt_daemon", 0444) < 0)
+					if (mkdir(PATH_LOG, 0444) < 0)
 						throw Error(errno, strerror(errno), 2);
 				}
 				else
@@ -101,7 +101,8 @@ int			main(void)
 				throw Error(errno, strerror(errno), 2);
 			if ((chdir("/") < 0))
 				throw Error(errno, strerror(errno), 2);
-			log = new Tintin_reporter("/var/log/matt_daemon/matt_daemon.log");
+			log = new Tintin_reporter(PATH_FILE_LOG);
+			log->log(info, "Started");
 		}
 		catch (std::exception const& e)
 		{
@@ -120,7 +121,7 @@ int			main(void)
 			return (EXIT_FAILURE);
 		}
 		sig_sock = sock;
-		log->log(info, "Server create");
+		log->log(info, "Server created");
 		run_server(&sock, log);
 		log->log(info, "Server shutdown");
 		unlock_deamon(&fd);

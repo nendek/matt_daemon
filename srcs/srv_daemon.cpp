@@ -17,16 +17,14 @@ static int	read_from_client(int fd, Tintin_reporter *log)
 	memset(buffer, '\0', MAXMSG);
 	nbytes = read(fd, buffer, MAXMSG - 1);
 	if (nbytes < 0)
-	{
-		exit (EXIT_FAILURE);
-	}
+		return (1);
 	else if (nbytes == 0)
 		return (-1);
 	else
 	{
 		std::string str;
 		str = buffer;
-		ret += "Receive msg: ";
+		ret += "User input: ";
 		ret += str;
 		log->log(msg, ret);
 		if (str.compare("quit\n") == 0)
@@ -96,7 +94,7 @@ int	run_server(const int *sock, Tintin_reporter *log)
 					else
 					{
 						close(new_client);
-						log->log(info, "Client disconnect because already 3 clients connected");
+						log->log(info, "Client disconnected because already 3 clients connected");
 					}
 				}
 				else
