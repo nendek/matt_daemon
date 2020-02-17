@@ -1,4 +1,4 @@
-#include "error.hpp"
+#include "Error_daemon.hpp"
 
 Error::Error( int num_error, std::string str_error, int lvl_error ) throw():
 	_num_error(num_error), _str_error(str_error), _lvl_error(lvl_error)

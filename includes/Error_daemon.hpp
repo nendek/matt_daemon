@@ -1,8 +1,8 @@
-#ifndef _ERROR_HPP_
-# define _ERROR_HPP_
+#ifndef _ERROR_DAEMON_HPP_
+# define _ERROR_DAEMON_HPP_
 
 # include <exception>
-#include <string>
+# include <string>
 
 class Error: public std::exception
 {

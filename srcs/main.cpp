@@ -121,7 +121,7 @@ int			main(void)
 			return (EXIT_FAILURE);
 		}
 		sig_sock = sock;
-		log->log(info, "Server created");
+		log->log(info, "Server created, PID: " + std::to_string(getpid()));
 		run_server(&sock, log);
 		log->log(info, "Server shutdown");
 		unlock_deamon(&fd);

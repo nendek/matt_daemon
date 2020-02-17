@@ -13,8 +13,8 @@
 # include <sys/types.h>
 # include <sys/file.h>
 
-# include "reporter.hpp"
-# include "error.hpp"
+# include "Reporter.hpp"
+# include "Error_daemon.hpp"
 
 # define SRV_PORT 4242
 # define MAXMSG 128

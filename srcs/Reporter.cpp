@@ -1,4 +1,4 @@
-#include "reporter.hpp"
+#include "Reporter.hpp"
 
 Tintin_reporter::Tintin_reporter( void ): _pathname("default pathname")
 {

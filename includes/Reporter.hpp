@@ -7,7 +7,7 @@
 # include <ctime>
 # include <iostream>
 
-# include "error.hpp"
+# include "Error_daemon.hpp"
 
 enum logLevel { error, info, msg };
 
