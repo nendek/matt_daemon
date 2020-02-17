@@ -17,7 +17,9 @@ static int	read_from_client(int fd, Tintin_reporter *log)
 	memset(buffer, '\0', MAXMSG);
 	nbytes = read(fd, buffer, MAXMSG);
 	if (nbytes < 0)
+	{
 		exit (EXIT_FAILURE);
+	}
 	else if (nbytes == 0)
 		return (-1);
 	else
@@ -29,7 +31,7 @@ static int	read_from_client(int fd, Tintin_reporter *log)
 		log->log(msg, ret);
 		if (str.compare("quit\n") == 0)
 			return (1);
-		if (str.compare("quit") == -1)
+		else if (str.compare("quit") == 0)
 			return (1);
 		return (0);
 	}
@@ -44,7 +46,7 @@ int	create_server(Tintin_reporter *log)
 	sock = 0;
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == SOCKET_ERROR)
 	{
-		log->log(error, "create socket");
+		log->log(error, strerror(errno));
 		return (EXIT_FAILURE);
 	}
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -54,8 +56,8 @@ int	create_server(Tintin_reporter *log)
 		if ((listen(sock, 5)) != SOCKET_ERROR)
 			return sock;
 	close(sock);
-	log->log(error, "create socket");
-	return (-1);
+	log->log(error, strerror(errno));
+	return (EXIT_FAILURE);
 }
 
 int	run_server(const int *sock, Tintin_reporter *log)
@@ -76,7 +78,7 @@ int	run_server(const int *sock, Tintin_reporter *log)
 	{
 		readfds = active_fd;
 		if (select(FD_SETSIZE, &readfds, NULL, NULL, NULL) < 0)
-			goto error;
+			goto err;
 		for (int i = 0; i < FD_SETSIZE; i++)
 		{
 			if (FD_ISSET(i, &readfds))
@@ -84,7 +86,7 @@ int	run_server(const int *sock, Tintin_reporter *log)
 				if (i == *sock)
 				{
 					if ((new_client = accept(*sock, (struct sockaddr*)&info_client, &size)) < 0)
-						goto error;
+						goto err;
 					if (nb_client < 3)
 					{
 						FD_SET(new_client, &active_fd);
@@ -112,8 +114,8 @@ int	run_server(const int *sock, Tintin_reporter *log)
 		}
 	}
 	return (0);
-error:
+err:
 	close(*sock);
-	log->log(error, "run server");
+	log->log(error, strerror(errno));
 	return (-1);
 }

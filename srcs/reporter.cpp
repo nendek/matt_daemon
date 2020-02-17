@@ -8,10 +8,8 @@ Tintin_reporter::Tintin_reporter( void ): _pathname("default pathname")
 Tintin_reporter::Tintin_reporter( std::string pathname ): _pathname(pathname)
 {
 	this->_fs.open(this->_pathname, std::ios::out | std::ios::app);
-	if (this->_fs.is_open())
-	{
-		//TODO throw error
-	}
+	if (!this->_fs.is_open())
+		throw Error(1, "fail open file log", 2);
 	return;
 }
 

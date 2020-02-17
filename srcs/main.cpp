@@ -1,13 +1,5 @@
 #include "matt_daemon.hpp"
 
-static void	quit(int *fd, Tintin_reporter *log)
-{
-	unlock_deamon(fd);
-	log->log(info, "Daemon stopped");
-	delete log;
-	exit (EXIT_SUCCESS);
-}
-
 int		main(void)
 {
 	pid_t			pid;
@@ -18,13 +10,28 @@ int		main(void)
 	Tintin_reporter*	log;
 
 	fd = 0;
-	if (check_credentials())
+	try
+	{
+		check_credentials();
+		lock_daemon(&fd);
+	}
+	catch (std::exception const& e)
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
 		return (EXIT_FAILURE);
-	if (lock_daemon(&fd))
+	}
+	try
+	{
+		pid = fork();
+		if (pid < 0)
+			throw Error(errno, strerror(errno), 2);
+	}
+	catch (std::exception const& e)
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+		unlock_deamon(&fd);
 		return (EXIT_FAILURE);
-	pid = fork();
-	if (pid < 0)
-		return (EXIT_FAILURE);
+	}
 	if (pid == 0)
 	{
 		sigsig();
@@ -45,8 +52,9 @@ int		main(void)
 		}
 		catch (std::exception const& e)
 		{
-			std::cout << "Error: " << e.what() << std::endl;
+			std::cerr << "Error: " << e.what() << std::endl;
 			unlock_deamon(&fd);
+			closedir(dir);
 			return (EXIT_FAILURE);
 		}
 		closedir(dir);
@@ -61,20 +69,25 @@ int		main(void)
 		}
 		catch (std::exception const& e)
 		{
-			std::cout << "Error: " << e.what() << std::endl;
+			std::cerr << "Error: " << e.what() << std::endl;
 			unlock_deamon(&fd);
 			return (EXIT_FAILURE);
 		}
-		//close out std f
-		//close(STDIN_FILENO);
-		//close(STDOUT_FILENO);
-		//close(STDERR_FILENO);
+		close(STDIN_FILENO);
+		close(STDOUT_FILENO);
+		close(STDERR_FILENO);
 		log->log(info, "Daemon create");
 		if ((sock = create_server(log)) < 0)
+		{
+			unlock_deamon(&fd);
+			delete log;
 			return (EXIT_FAILURE);
+		}
 		log->log(info, "Server create");
 		run_server(&sock, log);
-		quit(&fd, log);
+		log->log(info, "Server shutdown");
+		unlock_deamon(&fd);
+		delete log;
 	}
 	return (EXIT_SUCCESS);
 }

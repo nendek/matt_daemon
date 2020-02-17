@@ -7,6 +7,8 @@
 # include <ctime>
 # include <iostream>
 
+# include "error.hpp"
+
 enum logLevel { error, info, msg };
 
 class Tintin_reporter

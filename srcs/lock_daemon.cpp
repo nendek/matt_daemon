@@ -8,11 +8,11 @@ int		lock_daemon(int *fd)
 		if ((flock(*fd, LOCK_EX | LOCK_NB)) < 0)
 		{
 			close(*fd);
-			goto error;
+			goto err;
 		}
 	return (EXIT_SUCCESS);
-error:
-	std::cout << "Error: Matt_daemon already run" << std::endl;
+err:
+	throw Error(1, "Matt_daemon already run", 2);
 	return (EXIT_FAILURE);
 }
 

@@ -6,6 +6,6 @@ int		check_credentials(void)
 
 	if ((cred = geteuid()) == 0)
 		return (EXIT_SUCCESS);
-	std::cout << "Error: not root credentials" << std::endl;
+	throw Error(1, "not root credentials", 2);
 	return (EXIT_FAILURE);
 }
