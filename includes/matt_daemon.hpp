@@ -25,9 +25,6 @@ void		unlock_deamon(int *fd);
 /*------------------ cred_daemon ------------------*/
 int		check_credentials(void);
 /*------------------ sig_daemon -------------------*/
-void		sigsig(void);
-void		sig_handler(int signo);
-/*------------------ sig_daemon -------------------*/
 int		create_server(Tintin_reporter *log);
 int		run_server(const int *sock, Tintin_reporter *log);
 

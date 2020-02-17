@@ -15,7 +15,7 @@ static int	read_from_client(int fd, Tintin_reporter *log)
 	std::string	ret;
 
 	memset(buffer, '\0', MAXMSG);
-	nbytes = read(fd, buffer, MAXMSG);
+	nbytes = read(fd, buffer, MAXMSG - 1);
 	if (nbytes < 0)
 	{
 		exit (EXIT_FAILURE);
@@ -91,9 +91,13 @@ int	run_server(const int *sock, Tintin_reporter *log)
 					{
 						FD_SET(new_client, &active_fd);
 						nb_client++;
+						log->log(info, "Client connected");
 					}
 					else
+					{
 						close(new_client);
+						log->log(info, "Client disconnect because already 3 clients connected");
+					}
 				}
 				else
 				{
@@ -103,6 +107,7 @@ int	run_server(const int *sock, Tintin_reporter *log)
 						close(i);
 						FD_CLR(i, &active_fd);
 						nb_client--;
+						log->log(info, "Client disconnected");
 					}
 					else if (ret == 1)
 					{

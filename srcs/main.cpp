@@ -1,6 +1,38 @@
 #include "matt_daemon.hpp"
 
-int		main(void)
+Tintin_reporter*	sig_log;
+int			sig_fd;
+int			sig_sock;
+
+static void		sig_handler(int signo)
+{
+	if (sig_fd != 0)
+		unlock_deamon(&sig_fd);
+	if (sig_sock != 0)
+		close(sig_sock);
+	if (sig_log != NULL)
+	{
+		sig_log->log(info, "Signal receive num:" + std::to_string(signo));
+		sig_log->log(info, "Server shutdown");
+		delete sig_log;
+	}
+	exit(EXIT_SUCCESS);
+}
+
+static void		sigsig(void)
+{
+		signal(SIGTSTP, SIG_IGN);
+		signal(SIGCONT, SIG_IGN);
+		signal(SIGTTIN, SIG_IGN);
+		signal(SIGTTOU, SIG_IGN);
+		signal(SIGHUP, SIG_IGN);
+		signal(SIGCHLD, SIG_DFL);
+		signal(SIGTERM, sig_handler);
+		signal(SIGINT, sig_handler);
+		signal(SIGQUIT, sig_handler);
+}
+
+int			main(void)
 {
 	pid_t			pid;
 	pid_t			sid;
@@ -9,6 +41,9 @@ int		main(void)
 	DIR			*dir;
 	Tintin_reporter*	log;
 
+	sig_log = NULL;
+	sig_fd = 0;
+	sig_sock = 0;
 	fd = 0;
 	try
 	{
@@ -20,6 +55,7 @@ int		main(void)
 		std::cerr << "Error: " << e.what() << std::endl;
 		return (EXIT_FAILURE);
 	}
+	sig_fd = fd;
 	try
 	{
 		pid = fork();
@@ -73,16 +109,17 @@ int		main(void)
 			unlock_deamon(&fd);
 			return (EXIT_FAILURE);
 		}
+		sig_log = log;
 		close(STDIN_FILENO);
 		close(STDOUT_FILENO);
 		close(STDERR_FILENO);
-		log->log(info, "Daemon create");
 		if ((sock = create_server(log)) < 0)
 		{
 			unlock_deamon(&fd);
 			delete log;
 			return (EXIT_FAILURE);
 		}
+		sig_sock = sock;
 		log->log(info, "Server create");
 		run_server(&sock, log);
 		log->log(info, "Server shutdown");
