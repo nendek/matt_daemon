@@ -3,7 +3,8 @@ CFLAGS = -Wall -Wextra -Werror -g
 
 NAME = Matt_daemon
 FILES = main.cpp sig_daemon.cpp cred_daemon.cpp \
-	lock_daemon.cpp srv_daemon.cpp reporter.cpp
+	lock_daemon.cpp srv_daemon.cpp reporter.cpp \
+	error.cpp
 
 SRCS_DIR = srcs
 SRCS = $(addprefix $(SRCS_DIR)/,$(FILES))

@@ -10,11 +10,12 @@ static void	quit(int *fd, Tintin_reporter *log)
 
 int		main(void)
 {
-	pid_t		pid;
-	pid_t		sid;
-	int		fd;
-	int		sock;
-
+	pid_t			pid;
+	pid_t			sid;
+	int			fd;
+	int			sock;
+	DIR			*dir;
+	Tintin_reporter*	log;
 
 	fd = 0;
 	if (check_credentials())
@@ -28,27 +29,42 @@ int		main(void)
 	{
 		sigsig();
 		umask(0);
-
-		//TODO try catch
-		if (mkdir("/var/log/matt_daemon", 0444) < 0)
+		dir = opendir("/var/log/matt_daemon");
+		try
 		{
-			//TODO throw error
-			std::cout << "mkdir" << std::endl;
+			if (!dir)
+			{
+				if (errno == ENOENT)
+				{
+					if (mkdir("/var/log/matt_daemon", 0444) < 0)
+						throw Error(errno, strerror(errno), 2);
+				}
+				else
+					throw Error(errno, strerror(errno), 2);
+			}
 		}
-		Tintin_reporter* log = new Tintin_reporter("/var/log/matt_daemon/matt_daemon.log");
-
-		sid = setsid();
-		if (sid < 0)
+		catch (std::exception const& e)
 		{
-			log->log(error, "Error setsid()");
+			std::cout << "Error: " << e.what() << std::endl;
+			unlock_deamon(&fd);
 			return (EXIT_FAILURE);
 		}
-		if ((chdir("/") < 0))
+		closedir(dir);
+		try
 		{
-			log->log(error, "Error chdir()");
+			sid = setsid();
+			if (sid < 0)
+				throw Error(errno, strerror(errno), 2);
+			if ((chdir("/") < 0))
+				throw Error(errno, strerror(errno), 2);
+			log = new Tintin_reporter("/var/log/matt_daemon/matt_daemon.log");
+		}
+		catch (std::exception const& e)
+		{
+			std::cout << "Error: " << e.what() << std::endl;
+			unlock_deamon(&fd);
 			return (EXIT_FAILURE);
 		}
-
 		//close out std f
 		//close(STDIN_FILENO);
 		//close(STDOUT_FILENO);

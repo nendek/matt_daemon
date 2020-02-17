@@ -5,12 +5,16 @@
 
 # include <unistd.h>
 # include <signal.h>
+# include <dirent.h>
+# include <errno.h>
+# include <string.h>
 
 # include <sys/stat.h>
 # include <sys/types.h>
 # include <sys/file.h>
 
-#include "reporter.hpp"
+# include "reporter.hpp"
+# include "error.hpp"
 
 # define SRV_PORT 4242
 # define MAXMSG 128
