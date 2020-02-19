@@ -1,39 +1,19 @@
-CC = g++
-CFLAGS = -Wall -Wextra -Werror -g
+all:
+	make -f ./Makefile.Ben_AFK
+	make -f ./Makefile.Matt_daemon
 
-NAME = Matt_daemon
-FILES = main.cpp cred_daemon.cpp \
-	lock_daemon.cpp srv_daemon.cpp Reporter.cpp \
-	Error_daemon.cpp
+Ben_AFK:
+	make -f ./Makefile.Ben_AFK
 
-SRCS_DIR = srcs
-SRCS = $(addprefix $(SRCS_DIR)/,$(FILES))
+Matt_daemon:
+	make -f ./Makefile.Matt_daemon
 
-INCS_DIR = includes
-INCS = -I $(INCS_DIR)
-
-OBJS_DIR = objs
-OBJS = $(addprefix $(OBJS_DIR)/,$(FILES:%.cpp=%.o))
-
-.PHONY: all
-all: $(NAME)
-
-$(NAME): $(OBJS_DIR) $(OBJS)
-	$(CC) $(CFLAGS) $(INCS) -o $(NAME) $(OBJS)
-
-$(OBJS_DIR):
-	mkdir -p $(OBJS_DIR)
-
-$(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
-	$(CC) $(CFLAGS) $(INCS) -c -o $@ $<
-
-.PHONY: clean
 clean:
-	rm -rf objs
+	make clean -f ./Makefile.Ben_AFK
+	make clean -f ./Makefile.Matt_daemon
 
-.PHONY: fclean
-fclean: clean
-	rm -f $(NAME)
+fclean:
+	make fclean -f ./Makefile.Ben_AFK
+	make fclean -f ./Makefile.Matt_daemon
 
-.PHONY: re
-re: fclean all
+re: clean all
