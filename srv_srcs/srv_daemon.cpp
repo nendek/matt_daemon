@@ -8,6 +8,17 @@
 
 #define SOCKET_ERROR -1
 
+static void	decrypt_msg(char *str, int len)
+{
+	int i = 0;
+	
+	while (i < len - 1)
+	{
+		str[i] ^= KEY;
+		i++;
+	}
+}
+
 static int	read_from_client(int sd, Tintin_reporter *log)
 {
 	char			buffer[MAXMSG];
@@ -17,6 +28,7 @@ static int	read_from_client(int sd, Tintin_reporter *log)
 
 	memset(buffer, '\0', MAXMSG);
 	nbytes = recv(sd, buffer, MAXMSG - 1, 0);
+	decrypt_msg(buffer, nbytes);
 	if (nbytes < 0)
 		return (1);
 	else if (nbytes == 0)
@@ -25,8 +37,6 @@ static int	read_from_client(int sd, Tintin_reporter *log)
 	{
 		str = buffer;
 		ret += "User input: ";
-		ret += std::to_string(sd);
-		ret += " ";
 		ret += str;
 		log->log(msg, ret);
 		if (str.compare("quit\n") == 0)

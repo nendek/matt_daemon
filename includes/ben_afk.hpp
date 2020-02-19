@@ -14,5 +14,6 @@
 # define ADDR "127.0.0.1"
 # define PORT 4242
 # define BUFF_SIZE 128
+# define KEY 4242
 
 #endif

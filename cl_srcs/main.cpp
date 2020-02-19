@@ -1,5 +1,16 @@
 #include "ben_afk.hpp"
 
+static void	encrypt_msg(char *str, int len)
+{
+	int i = 0;
+
+	while (i < len - 1)
+	{
+		str[i] ^= KEY;
+		i++;
+	}
+}
+
 static int	create_client(void)
 {
 	int			sock = 0;
@@ -32,9 +43,9 @@ int	main(void)
 	int	sock;
 	char	buff[BUFF_SIZE];
 	int	ret;
+	int	end = 0;
 
 	sock = create_client();
-	dprintf(1, "%d\n", sock);
 	while (1)
 	{
 		if ((ret = read(STDIN_FILENO, buff, BUFF_SIZE)) == -1)
@@ -43,12 +54,15 @@ int	main(void)
 			return (errno);
 		}
 		buff[ret - 1] = '\0';
+		if (!strcmp(buff, "quit"))
+			end = 1;
+		encrypt_msg(buff, ret);
 		if (send(sock, buff, ret, 0) == -1)
 		{
 			perror("send");
 			return (errno);
 		}
-		if (!strcmp(buff, "quit"))
+		if (end)
 			return (0);
 		memset(&buff, '\0', BUFF_SIZE);
 
