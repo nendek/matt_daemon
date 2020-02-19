@@ -1,30 +1,32 @@
 #include "matt_daemon.hpp"
 
-#include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/socket.h>
 #include <arpa/inet.h>
 
 #include <cstring>
 
 #define SOCKET_ERROR -1
 
-static int	read_from_client(int fd, Tintin_reporter *log)
+static int	read_from_client(int sd, Tintin_reporter *log)
 {
-	char		buffer[MAXMSG];
-	int		nbytes;
-	std::string	ret;
+	char			buffer[MAXMSG];
+	int			nbytes;
+	std::string		ret;
+	std::string 		str;
 
 	memset(buffer, '\0', MAXMSG);
-	nbytes = read(fd, buffer, MAXMSG - 1);
+	nbytes = recv(sd, buffer, MAXMSG - 1, 0);
 	if (nbytes < 0)
 		return (1);
 	else if (nbytes == 0)
 		return (-1);
 	else
 	{
-		std::string str;
 		str = buffer;
 		ret += "User input: ";
+		ret += std::to_string(sd);
+		ret += " ";
 		ret += str;
 		log->log(msg, ret);
 		if (str.compare("quit\n") == 0)
@@ -36,7 +38,7 @@ static int	read_from_client(int fd, Tintin_reporter *log)
 	return (0);
 }
 
-int	create_server(Tintin_reporter *log)
+int		create_server(Tintin_reporter *log)
 {
 	int			sock;
 	struct sockaddr_in	sin;
@@ -58,7 +60,7 @@ int	create_server(Tintin_reporter *log)
 	return (EXIT_FAILURE);
 }
 
-int	run_server(const int *sock, Tintin_reporter *log)
+int		run_server(const int *sock, Tintin_reporter *log)
 {
 	struct sockaddr_in	info_client;
 	fd_set			readfds;
