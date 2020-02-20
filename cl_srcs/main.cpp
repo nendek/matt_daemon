@@ -1,6 +1,6 @@
 #include "ben_afk.hpp"
 
-static void	encrypt_msg(char *str, int len)
+static void		encrypt_msg(char *str, const int len)
 {
 	int i = 0;
 
@@ -11,18 +11,12 @@ static void	encrypt_msg(char *str, int len)
 	}
 }
 
-static int	create_client(void)
+static int		create_client(void)
 {
 	int			sock = 0;
 	struct sockaddr_in	sin;
-	struct protoent		*proto = NULL;
 
-	if ((proto = getprotobyname("tcp")) == NULL)
-	{
-		perror("getprotobyname");
-		exit(errno);
-	}
-	if ((sock = socket(PF_INET, SOCK_STREAM, proto->p_proto)) == -1)
+	if ((sock = socket(PF_INET, SOCK_STREAM, 0)) == SOCKET_ERROR)
 	{
 		perror("socket");
 		exit(errno);
@@ -30,7 +24,7 @@ static int	create_client(void)
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(PORT);
 	sin.sin_addr.s_addr = inet_addr(ADDR);
-	if ((connect(sock, (const struct sockaddr *)&sin, sizeof(sin))) == -1)
+	if ((connect(sock, (const struct sockaddr *)&sin, sizeof(sin))) == SOCKET_ERROR)
 	{
 		perror("connect");
 		exit(errno);
@@ -38,34 +32,80 @@ static int	create_client(void)
 	return (sock);
 }
 
-int	main(void)
+static void		write_server(const SOCKET sock, const char *buffer, const int len)
 {
-	int	sock;
-	char	buff[BUFF_SIZE];
-	int	ret;
-	int	end = 0;
+	if (send(sock, buffer, len,  0) < 0)
+	{
+		perror("send()");
+		exit(errno);
+	}
+}
 
-	sock = create_client();
+static int		read_server(const SOCKET sock, char *buffer)
+{
+	int n = 0;
+
+	if((n = recv(sock, buffer, BUFF_SIZE - 1, 0)) < 0)
+	{
+		perror("recv()");
+		exit(errno);
+	}
+	buffer[n] = '\0';
+	return (n);
+}
+
+static int		client(const SOCKET sock)
+{
+	fd_set	readfds;
+	fd_set	active_fds;
+	char	buffer[BUFF_SIZE];
+	int	ret;
+
+	FD_ZERO(&active_fds);
+	FD_SET(STDIN_FILENO, &active_fds);
+	FD_SET(sock, &active_fds);
 	while (1)
 	{
-		if ((ret = read(STDIN_FILENO, buff, BUFF_SIZE)) == -1)
+		readfds = active_fds;
+		if(select(sock + 1, &readfds, NULL, NULL, NULL) == -1)
 		{
-			perror("read");
-			return (errno);
+			perror("select()");
+			exit(errno);
 		}
-		buff[ret - 1] = '\0';
-		if (!strcmp(buff, "quit"))
-			end = 1;
-		encrypt_msg(buff, ret);
-		if (send(sock, buff, ret, 0) == -1)
+		if (FD_ISSET(STDIN_FILENO, &readfds))
 		{
-			perror("send");
-			return (errno);
+			if ((ret = read(STDIN_FILENO, buffer, BUFF_SIZE)) == -1)
+			{
+				perror("read");
+				goto error;
+			}
+			buffer[ret - 1] = '\0';
+			encrypt_msg(buffer, ret);
+			write_server(sock, buffer, ret);
+			memset(&buffer, '\0', BUFF_SIZE);
 		}
-		if (end)
-			return (0);
-		memset(&buff, '\0', BUFF_SIZE);
-
+		else if(FD_ISSET(sock, &readfds))
+		{
+			int n = read_server(sock, buffer);
+			if (n == 0)
+			{
+				printf("Server is down !\n");
+				break;
+			}
+			write(STDOUT_FILENO, &buffer, strlen(buffer));
+		}
 	}
-	return (0);
+	close(sock);
+	return(0);
+error:
+	close(sock);
+	return(errno);
+}
+
+int	main(void)
+{
+	SOCKET	sock;
+
+	sock = create_client();
+	return (client(sock));
 }

@@ -8,7 +8,9 @@
 
 #define SOCKET_ERROR -1
 
-static void	decrypt_msg(char *str, int len)
+typedef int SOCKET;
+
+static void	decrypt_msg(char *str, const int len)
 {
 	int i = 0;
 	
@@ -19,7 +21,7 @@ static void	decrypt_msg(char *str, int len)
 	}
 }
 
-static int	read_from_client(int sd, Tintin_reporter *log)
+static int	read_from_client(const SOCKET sd, Tintin_reporter *log)
 {
 	char			buffer[MAXMSG];
 	int			nbytes;
@@ -29,6 +31,7 @@ static int	read_from_client(int sd, Tintin_reporter *log)
 	memset(buffer, '\0', MAXMSG);
 	nbytes = recv(sd, buffer, MAXMSG - 1, 0);
 	decrypt_msg(buffer, nbytes);
+	write(sd, "COCOU\n", 6);
 	if (nbytes < 0)
 		return (1);
 	else if (nbytes == 0)
@@ -50,7 +53,7 @@ static int	read_from_client(int sd, Tintin_reporter *log)
 
 int		create_server(Tintin_reporter *log)
 {
-	int			sock;
+	SOCKET			sock;
 	struct sockaddr_in	sin;
 
 	sock = 0;
@@ -70,10 +73,11 @@ int		create_server(Tintin_reporter *log)
 	return (EXIT_FAILURE);
 }
 
-int		run_server(const int *sock, Tintin_reporter *log)
+int		run_server(const SOCKET *sock, Tintin_reporter *log)
 {
 	struct sockaddr_in	info_client;
 	fd_set			readfds;
+	fd_set			writefds;
 	fd_set			active_fd;
 	socklen_t		size;
 	int			new_client;
@@ -87,8 +91,10 @@ int		run_server(const int *sock, Tintin_reporter *log)
 	while (1)
 	{
 		readfds = active_fd;
-		if (select(FD_SETSIZE, &readfds, NULL, NULL, NULL) < 0)
+		writefds = active_fd;
+		if (select(FD_SETSIZE, &readfds, &writefds, NULL, NULL) < 0)
 			goto err;
+		(void)writefds;
 		for (int i = 0; i < FD_SETSIZE; i++)
 		{
 			if (FD_ISSET(i, &readfds))

@@ -16,4 +16,8 @@
 # define BUFF_SIZE 128
 # define KEY 4242
 
+# define SOCKET_ERROR -1
+
+typedef int SOCKET;
+
 #endif
