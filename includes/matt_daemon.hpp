@@ -22,6 +22,7 @@
 # define PATH_FILE_LOG "/var/log/matt_daemon/matt_daemon.log"
 # define PATH_FILE_LOCK "/var/lock/matt_daemon.lock"
 # define KEY 4242
+# define PASSWD_HASH 0x17c7a6ed1
 
 /*------------------ lock_daemon ------------------*/
 int		lock_daemon(int *fd);

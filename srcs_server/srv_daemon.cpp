@@ -10,10 +10,20 @@
 
 typedef int SOCKET;
 
-static void	decrypt_msg(char *str, const int len)
+static unsigned long	hash_djb2(unsigned char *str)
+{
+	unsigned long	hash = 5381;
+	int		c;
+
+	while ((c = *str++))
+		hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+	return (hash);
+}
+
+static void		decrypt_msg(char *str, const int len)
 {
 	int i = 0;
-	
+
 	while (i < len - 1)
 	{
 		str[i] ^= KEY;
@@ -21,7 +31,7 @@ static void	decrypt_msg(char *str, const int len)
 	}
 }
 
-static void	encrypt_msg(char *str, const int len)
+static void		encrypt_msg(char *str, const int len)
 {
 	int i = 0;
 
@@ -32,7 +42,7 @@ static void	encrypt_msg(char *str, const int len)
 	}
 }
 
-static int	write_client(const SOCKET sock, char *buffer, const int len, Tintin_reporter *log)
+static int		write_client(const SOCKET sock, char *buffer, const int len, Tintin_reporter *log)
 {
 	encrypt_msg(buffer, len);
 	if (send(sock, buffer, len, 0) < 0)
@@ -43,14 +53,14 @@ static int	write_client(const SOCKET sock, char *buffer, const int len, Tintin_r
 	return (0);
 }
 
-static void	ask_passwd(const SOCKET sock, Tintin_reporter *log)
+static void		ask_passwd(const SOCKET sock, Tintin_reporter *log)
 {
 	char	str[] = "passwd:\n";
 
 	write_client(sock, str, 8, log);
 }
 
-static int	read_client(const SOCKET sd, Tintin_reporter *log, uint8_t *auth)
+static int		read_client(const SOCKET sd, Tintin_reporter *log, uint8_t *auth)
 {
 	char			buffer[MAXMSG];
 	int			n;
@@ -68,7 +78,7 @@ static int	read_client(const SOCKET sd, Tintin_reporter *log, uint8_t *auth)
 	{
 		if (*auth == 0)
 		{
-			if (!strcmp(buffer, "coucou"))
+			if (PASSWD_HASH == hash_djb2((unsigned char*)buffer))
 			{
 				log->log(info, "User logged");
 				*auth = 1;
@@ -90,7 +100,7 @@ static int	read_client(const SOCKET sd, Tintin_reporter *log, uint8_t *auth)
 	return (0);
 }
 
-int		create_server(Tintin_reporter *log)
+int			create_server(Tintin_reporter *log)
 {
 	SOCKET			sock;
 	struct sockaddr_in	sin;
@@ -112,7 +122,7 @@ int		create_server(Tintin_reporter *log)
 	return (EXIT_FAILURE);
 }
 
-int		run_server(const SOCKET *sock, Tintin_reporter *log)
+int			run_server(const SOCKET *sock, Tintin_reporter *log)
 {
 	struct sockaddr_in	info_client;
 	fd_set			readfds;
