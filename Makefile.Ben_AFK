@@ -4,13 +4,13 @@ CFLAGS = -Wall -Wextra -Werror -g
 NAME = Ben_AFK
 FILES = main.cpp
 
-SRCS_DIR = cl_srcs
+SRCS_DIR = srcs_client
 SRCS = $(addprefix $(SRCS_DIR)/,$(FILES))
 
 INCS_DIR = includes
 INCS = -I $(INCS_DIR)
 
-OBJS_DIR = cl_objs
+OBJS_DIR = objs_client
 OBJS = $(addprefix $(OBJS_DIR)/,$(FILES:%.cpp=%.o))
 
 .PHONY: all
