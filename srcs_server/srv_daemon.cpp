@@ -21,23 +21,62 @@ static void	decrypt_msg(char *str, const int len)
 	}
 }
 
-static int	read_from_client(const SOCKET sd, Tintin_reporter *log)
+static void	encrypt_msg(char *str, const int len)
+{
+	int i = 0;
+
+	while (i < len - 1)
+	{
+		str[i] ^= KEY;
+		i++;
+	}
+}
+
+static int	write_client(const SOCKET sock, char *buffer, const int len, Tintin_reporter *log)
+{
+	encrypt_msg(buffer, len);
+	if (send(sock, buffer, len, 0) < 0)
+	{
+		log->log(error, strerror(errno));
+		return (EXIT_FAILURE);
+	}
+	return (0);
+}
+
+static void	ask_passwd(const SOCKET sock, Tintin_reporter *log)
+{
+	char	str[] = "passwd:\n";
+
+	write_client(sock, str, 8, log);
+}
+
+static int	read_client(const SOCKET sd, Tintin_reporter *log, uint8_t *auth)
 {
 	char			buffer[MAXMSG];
-	int			nbytes;
+	int			n;
 	std::string		ret;
 	std::string 		str;
 
 	memset(buffer, '\0', MAXMSG);
-	nbytes = recv(sd, buffer, MAXMSG - 1, 0);
-	decrypt_msg(buffer, nbytes);
-	write(sd, "COCOU\n", 6);
-	if (nbytes < 0)
+	n = recv(sd, buffer, MAXMSG - 1, 0);
+	decrypt_msg(buffer, n);
+	if (n < 0)
 		return (1);
-	else if (nbytes == 0)
+	else if (n == 0)
 		return (-1);
 	else
 	{
+		if (*auth == 0)
+		{
+			if (!strcmp(buffer, "coucou"))
+			{
+				log->log(info, "User logged");
+				*auth = 1;
+				return (0);
+			}
+			ask_passwd(sd, log);
+			return (0);
+		}
 		str = buffer;
 		ret += "User input: ";
 		ret += str;
@@ -83,6 +122,7 @@ int		run_server(const SOCKET *sock, Tintin_reporter *log)
 	int			new_client;
 	int			nb_client;
 	int			ret;
+	uint8_t			auth[3] = {0};
 
 	nb_client = 0;
 	size = sizeof(info_client);
@@ -108,6 +148,7 @@ int		run_server(const SOCKET *sock, Tintin_reporter *log)
 						FD_SET(new_client, &active_fd);
 						nb_client++;
 						log->log(info, "Client connected");
+						ask_passwd(new_client, log);
 					}
 					else
 					{
@@ -117,7 +158,7 @@ int		run_server(const SOCKET *sock, Tintin_reporter *log)
 				}
 				else
 				{
-					ret = read_from_client(i, log);
+					ret = read_client(i, log, &auth[i]);
 					if (ret < 0)
 					{
 						close(i);

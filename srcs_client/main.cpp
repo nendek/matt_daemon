@@ -11,6 +11,17 @@ static void		encrypt_msg(char *str, const int len)
 	}
 }
 
+static void		decrypt_msg(char *str, const int len)
+{
+	int i = 0;
+	
+	while (i < len - 1)
+	{
+		str[i] ^= KEY;
+		i++;
+	}
+}
+
 static int		create_client(void)
 {
 	int			sock = 0;
@@ -32,8 +43,9 @@ static int		create_client(void)
 	return (sock);
 }
 
-static void		write_server(const SOCKET sock, const char *buffer, const int len)
+static void		write_server(const SOCKET sock, char *buffer, const int len)
 {
+	encrypt_msg(buffer, len);
 	if (send(sock, buffer, len,  0) < 0)
 	{
 		perror("send()");
@@ -50,6 +62,7 @@ static int		read_server(const SOCKET sock, char *buffer)
 		perror("recv()");
 		exit(errno);
 	}
+	decrypt_msg(buffer,n);
 	buffer[n] = '\0';
 	return (n);
 }
@@ -80,7 +93,6 @@ static int		client(const SOCKET sock)
 				goto error;
 			}
 			buffer[ret - 1] = '\0';
-			encrypt_msg(buffer, ret);
 			write_server(sock, buffer, ret);
 			memset(&buffer, '\0', BUFF_SIZE);
 		}
