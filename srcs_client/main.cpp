@@ -102,7 +102,7 @@ static int		client(const SOCKET sock)
 			if (n == 0)
 			{
 				printf("Server is down !\n");
-				break;
+				goto error;
 			}
 			write(STDOUT_FILENO, &buffer, strlen(buffer));
 		}

@@ -24,6 +24,14 @@
 # define KEY 4242
 # define PASSWD_HASH 0x17c7a6ed1
 
+typedef int SOCKET;
+
+typedef struct			client_s
+{
+	uint8_t		auth;
+	SOCKET		sock;
+}				client_t;
+
 /*------------------ lock_daemon ------------------*/
 int		lock_daemon(int *fd);
 void		unlock_deamon(int *fd);

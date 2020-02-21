@@ -8,8 +8,6 @@
 
 #define SOCKET_ERROR -1
 
-typedef int SOCKET;
-
 static unsigned long	hash_djb2(unsigned char *str)
 {
 	unsigned long	hash = 5381;
@@ -48,7 +46,7 @@ static int		write_client(const SOCKET sock, char *buffer, const int len, Tintin_
 	if (send(sock, buffer, len, 0) < 0)
 	{
 		log->log(error, strerror(errno));
-		return (EXIT_FAILURE);
+		return (-1);
 	}
 	return (0);
 }
@@ -100,51 +98,65 @@ static int		read_client(const SOCKET sd, Tintin_reporter *log, uint8_t *auth)
 	return (0);
 }
 
-int			create_server(Tintin_reporter *log)
+static void		init_client(client_t *client, int len)
 {
-	SOCKET			sock;
-	struct sockaddr_in	sin;
-
-	sock = 0;
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == SOCKET_ERROR)
+	for (int i = 0; i < len; i++)
 	{
-		log->log(error, strerror(errno));
-		return (EXIT_FAILURE);
+		client[i].auth = 0;
+		client[i].sock = 0;
 	}
-	sin.sin_addr.s_addr = htonl(INADDR_ANY);
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons(SRV_PORT);
-	if ((bind(sock, (struct sockaddr*)&sin, sizeof(sin))) != SOCKET_ERROR)
-		if ((listen(sock, 5)) != SOCKET_ERROR)
-			return sock;
-	close(sock);
-	log->log(error, strerror(errno));
-	return (EXIT_FAILURE);
+}
+
+static void		clear_client(client_t *client, const int i)
+{
+	if (client[i].sock > 0)
+		close(client[i].sock);
+	client[i].sock = 0;
+	client[i].auth = 0;
+}
+
+static void		clear_clients(client_t *client, const int len)
+{
+	for (int i = 0; i < len; i++)
+		clear_client(client, i);
+}
+
+static int		get_max(client_t *client, const int len)
+{
+	int max = 0;
+
+	for (int i = 0; i < len; i++)
+	{
+		if (client[i].sock > max)
+			max = client[i].sock;
+	}
+	return (max);
 }
 
 int			run_server(const SOCKET *sock, Tintin_reporter *log)
 {
 	struct sockaddr_in	info_client;
 	fd_set			readfds;
-	fd_set			writefds;
 	fd_set			active_fd;
 	socklen_t		size;
 	int			new_client;
 	int			nb_client;
 	int			ret;
-	uint8_t			auth[3] = {0};
+	int			max;
+	client_t		client[3];
 
+	max = *sock;
 	nb_client = 0;
+	init_client(client, 3);
 	size = sizeof(info_client);
 	FD_ZERO(&active_fd);
 	FD_SET(*sock, &active_fd);
 	while (1)
 	{
+		max = get_max(client, nb_client);
 		readfds = active_fd;
-		writefds = active_fd;
-		if (select(FD_SETSIZE, &readfds, &writefds, NULL, NULL) < 0)
+		if (select(max + 1, &readfds, NULL, NULL, NULL) < 0)
 			goto err;
-		(void)writefds;
 		for (int i = 0; i < FD_SETSIZE; i++)
 		{
 			if (FD_ISSET(i, &readfds))
@@ -156,8 +168,11 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 					if (nb_client < 3)
 					{
 						FD_SET(new_client, &active_fd);
+						if (max < new_client)
+							max = new_client;
 						nb_client++;
 						log->log(info, "Client connected");
+						client[i].sock = new_client;
 						ask_passwd(new_client, log);
 					}
 					else
@@ -168,16 +183,17 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 				}
 				else
 				{
-					ret = read_client(i, log, &auth[i]);
+					ret = read_client(i, log, &(client[i]).auth);
 					if (ret < 0)
 					{
-						close(i);
 						FD_CLR(i, &active_fd);
 						nb_client--;
+						clear_client(client, i);
 						log->log(info, "Client disconnected");
 					}
 					else if (ret == 1)
 					{
+						clear_clients(client, 3);
 						close(*sock);
 						return (0);
 					}
@@ -187,7 +203,31 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 	}
 	return (0);
 err:
+	clear_clients(client, 3);
 	close(*sock);
 	log->log(error, strerror(errno));
 	return (-1);
 }
+
+int			create_server(Tintin_reporter *log)
+{
+	SOCKET			sock;
+	struct sockaddr_in	sin;
+
+	sock = 0;
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == SOCKET_ERROR)
+	{
+		log->log(error, strerror(errno));
+		return (-1);
+	}
+	sin.sin_addr.s_addr = htonl(INADDR_ANY);
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(SRV_PORT);
+	if ((bind(sock, (struct sockaddr*)&sin, sizeof(sin))) != SOCKET_ERROR)
+		if ((listen(sock, 5)) != SOCKET_ERROR)
+			return sock;
+	close(sock);
+	log->log(error, strerror(errno));
+	return (-1);
+}
+
