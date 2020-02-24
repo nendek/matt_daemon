@@ -204,12 +204,13 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 				}
 				else
 				{
-					ret = read_client(i, log, &(client[get_client_by_sock(client, MAXCLIENT, i)]).auth);
+					int index_client = get_client_by_sock(client, MAXCLIENT, i);
+					ret = read_client(i, log, &(client[index_client]).auth);
 					if (ret < 0)
 					{
 						FD_CLR(i, &active_fd);
 						nb_client--;
-						clear_client(client, i);
+						clear_client(client, index_client);
 						log->log(info, "Client disconnected");
 					}
 					else if (ret == 1)
