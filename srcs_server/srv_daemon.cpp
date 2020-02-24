@@ -51,9 +51,30 @@ static int		write_client(const SOCKET sock, char *buffer, const int len, Tintin_
 	return (0);
 }
 
+static void		send_shutdown(client_t *client, const int len, Tintin_reporter *log)
+{
+	char	str[] = "shutdown\0";
+
+	for (int i = 0; i < len; i++)
+	{
+		if (client[i].sock != 0)
+			write_client(client[i].sock, str, 8, log);
+	}
+}
+
+static int		all_close(client_t *client, const int len)
+{
+	for (int i = 0; i < len; i++)
+	{
+		if (client[i].sock != 0)
+			return (0);
+	}
+	return (1);
+}
+
 static void		ask_passwd(const SOCKET sock, Tintin_reporter *log)
 {
-	char	str[] = "passwd:\n";
+	char	str[] = "passwd:\n\0";
 
 	write_client(sock, str, 8, log);
 }
@@ -163,11 +184,13 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 	socklen_t		size;
 	int			new_client;
 	int			nb_client;
+	int			in_close;
 	int			ret;
 	int			max;
 	client_t		client[MAXCLIENT];
 
 	nb_client = 0;
+	in_close = 0;
 	init_client(client, MAXCLIENT);
 	size = sizeof(info_client);
 	FD_ZERO(&active_fd);
@@ -215,12 +238,19 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 					}
 					else if (ret == 1)
 					{
-						clear_clients(client, MAXCLIENT);
-						close(*sock);
-						return (0);
+						in_close = 1;
+						log->log(info, "Server in shutdown process");
+						send_shutdown(client, MAXCLIENT, log);
+						log->log(info, "Server send shutdown all clients");
 					}
 				}
 			}
+		}
+		if (in_close == 1 && (all_close(client, MAXCLIENT)) == 1)
+		{
+			clear_clients(client, MAXCLIENT);
+			close(*sock);
+			return (0);
 		}
 	}
 	return (0);
