@@ -18,9 +18,12 @@
 
 # define SRV_PORT 4242
 # define MAXMSG 256
+# define MAXCLIENT 3
+
 # define PATH_LOG "/var/log/matt_daemon"
 # define PATH_FILE_LOG "/var/log/matt_daemon/matt_daemon.log"
 # define PATH_FILE_LOCK "/var/lock/matt_daemon.lock"
+
 # define KEY 4242
 # define PASSWD_HASH 0x17c7a6ed1
 

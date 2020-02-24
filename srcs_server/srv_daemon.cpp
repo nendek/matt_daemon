@@ -121,9 +121,9 @@ static void		clear_clients(client_t *client, const int len)
 		clear_client(client, i);
 }
 
-static int		get_max(client_t *client, const int len)
+static int		get_max(client_t *client, const int len, const SOCKET srv)
 {
-	int max = 0;
+	int max = srv;
 
 	for (int i = 0; i < len; i++)
 	{
@@ -131,6 +131,28 @@ static int		get_max(client_t *client, const int len)
 			max = client[i].sock;
 	}
 	return (max);
+}
+
+static void		add_sock_client(client_t *client, const int len, const SOCKET sock)
+{
+	for (int i = 0; i < len; i++)
+	{
+		if (client[i].sock == 0)
+		{
+			client[i].sock = sock;
+			return;
+		}
+	}
+}
+
+static int		get_client_by_sock(client_t *client, const int len, const SOCKET sock)
+{
+	for (int i = 0; i < len; i++)
+	{
+		if (client[i].sock == sock)
+			return (i);
+	}
+	return (0);
 }
 
 int			run_server(const SOCKET *sock, Tintin_reporter *log)
@@ -143,21 +165,20 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 	int			nb_client;
 	int			ret;
 	int			max;
-	client_t		client[3];
+	client_t		client[MAXCLIENT];
 
-	max = *sock;
 	nb_client = 0;
-	init_client(client, 3);
+	init_client(client, MAXCLIENT);
 	size = sizeof(info_client);
 	FD_ZERO(&active_fd);
 	FD_SET(*sock, &active_fd);
 	while (1)
 	{
-		max = get_max(client, nb_client);
+		max = get_max(client, nb_client, *sock);
 		readfds = active_fd;
 		if (select(max + 1, &readfds, NULL, NULL, NULL) < 0)
 			goto err;
-		for (int i = 0; i < FD_SETSIZE; i++)
+		for (int i = 0; i < max + 1; i++)
 		{
 			if (FD_ISSET(i, &readfds))
 			{
@@ -165,25 +186,25 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 				{
 					if ((new_client = accept(*sock, (struct sockaddr*)&info_client, &size)) < 0)
 						goto err;
-					if (nb_client < 3)
+					if (nb_client < MAXCLIENT)
 					{
 						FD_SET(new_client, &active_fd);
 						if (max < new_client)
 							max = new_client;
 						nb_client++;
 						log->log(info, "Client connected");
-						client[i].sock = new_client;
+						add_sock_client(client, MAXCLIENT, new_client);
 						ask_passwd(new_client, log);
 					}
 					else
 					{
 						close(new_client);
-						log->log(info, "Client disconnected because already 3 clients connected");
+						log->log(info, "Client disconnected because already max clients connected");
 					}
 				}
 				else
 				{
-					ret = read_client(i, log, &(client[i]).auth);
+					ret = read_client(i, log, &(client[get_client_by_sock(client, MAXCLIENT, i)]).auth);
 					if (ret < 0)
 					{
 						FD_CLR(i, &active_fd);
@@ -193,7 +214,7 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 					}
 					else if (ret == 1)
 					{
-						clear_clients(client, 3);
+						clear_clients(client, MAXCLIENT);
 						close(*sock);
 						return (0);
 					}
@@ -203,7 +224,7 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 	}
 	return (0);
 err:
-	clear_clients(client, 3);
+	clear_clients(client, MAXCLIENT);
 	close(*sock);
 	log->log(error, strerror(errno));
 	return (-1);
