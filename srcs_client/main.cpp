@@ -87,6 +87,7 @@ static int		client(const SOCKET sock)
 		}
 		if (FD_ISSET(STDIN_FILENO, &readfds))
 		{
+			memset(&buffer, '\0', BUFF_SIZE);
 			if ((ret = read(STDIN_FILENO, buffer, BUFF_SIZE)) == -1)
 			{
 				perror("read");
@@ -94,15 +95,21 @@ static int		client(const SOCKET sock)
 			}
 			buffer[ret - 1] = '\0';
 			write_server(sock, buffer, ret);
-			memset(&buffer, '\0', BUFF_SIZE);
 		}
 		else if(FD_ISSET(sock, &readfds))
 		{
+			memset(&buffer, '\0', BUFF_SIZE);
 			int n = read_server(sock, buffer);
 			if (n == 0)
 			{
 				printf("Server is down !\n");
 				goto error;
+			}
+			if (!strcmp("shutdown", buffer))
+			{
+				close(sock);
+				write(STDOUT_FILENO, "Server shutdown\n", 16);
+				return (0);
 			}
 			write(STDOUT_FILENO, &buffer, strlen(buffer));
 		}

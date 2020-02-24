@@ -51,14 +51,19 @@ static int		write_client(const SOCKET sock, char *buffer, const int len, Tintin_
 	return (0);
 }
 
-static void		send_shutdown(client_t *client, const int len, Tintin_reporter *log)
+static void		send_shutdown(const SOCKET sock, Tintin_reporter *log)
 {
 	char	str[] = "shutdown\0";
 
+	write_client(sock, str, 9, log);
+}
+
+static void		all_shutdown(client_t *client, const int len, Tintin_reporter *log)
+{
 	for (int i = 0; i < len; i++)
 	{
 		if (client[i].sock != 0)
-			write_client(client[i].sock, str, 8, log);
+			send_shutdown(client[i].sock, log);
 	}
 }
 
@@ -76,7 +81,7 @@ static void		ask_passwd(const SOCKET sock, Tintin_reporter *log)
 {
 	char	str[] = "passwd:\n\0";
 
-	write_client(sock, str, 8, log);
+	write_client(sock, str, 9, log);
 }
 
 static int		read_client(const SOCKET sd, Tintin_reporter *log, uint8_t *auth)
@@ -209,7 +214,7 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 				{
 					if ((new_client = accept(*sock, (struct sockaddr*)&info_client, &size)) < 0)
 						goto err;
-					if (nb_client < MAXCLIENT)
+					if (nb_client < MAXCLIENT && in_close == 0)
 					{
 						FD_SET(new_client, &active_fd);
 						if (max < new_client)
@@ -219,8 +224,17 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 						add_sock_client(client, MAXCLIENT, new_client);
 						ask_passwd(new_client, log);
 					}
+					else if (in_close == 1)
+					{
+						char str[] = "Connection refused because the server in shutdown process\n\0";
+						write_client(new_client, str, strlen(str), log);
+						close(new_client);
+						log->log(info, "Client disconnected because the server in shutdown process");
+					}
 					else
 					{
+						char str[] = "Connection refused because the server max connections\n\0";
+						write_client(new_client, str, strlen(str), log);
 						close(new_client);
 						log->log(info, "Client disconnected because already max clients connected");
 					}
@@ -240,7 +254,7 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 					{
 						in_close = 1;
 						log->log(info, "Server in shutdown process");
-						send_shutdown(client, MAXCLIENT, log);
+						all_shutdown(client, MAXCLIENT, log);
 						log->log(info, "Server send shutdown all clients");
 					}
 				}
@@ -248,6 +262,7 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 		}
 		if (in_close == 1 && (all_close(client, MAXCLIENT)) == 1)
 		{
+			log->log(info, "All client disconnected, shutdown server");
 			clear_clients(client, MAXCLIENT);
 			close(*sock);
 			return (0);
