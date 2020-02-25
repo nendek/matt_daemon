@@ -43,21 +43,21 @@ static int		create_client(void)
 	return (sock);
 }
 
-static void		write_server(const SOCKET sock, char *buffer, const int len)
+static void		write_server(const SOCKET *sock, char *buffer, const int len)
 {
 	encrypt_msg(buffer, len);
-	if (send(sock, buffer, len,  0) < 0)
+	if (send(*sock, buffer, len,  0) < 0)
 	{
 		perror("send()");
 		exit(errno);
 	}
 }
 
-static int		read_server(const SOCKET sock, char *buffer)
+static int		read_server(const SOCKET *sock, char *buffer)
 {
 	int n = 0;
 
-	if((n = recv(sock, buffer, BUFF_SIZE - 1, 0)) < 0)
+	if((n = recv(*sock, buffer, BUFF_SIZE - 1, 0)) < 0)
 	{
 		perror("recv()");
 		exit(errno);
@@ -67,7 +67,7 @@ static int		read_server(const SOCKET sock, char *buffer)
 	return (n);
 }
 
-static int		client(const SOCKET sock)
+static int		client(const SOCKET *sock)
 {
 	fd_set	readfds;
 	fd_set	active_fds;
@@ -76,11 +76,11 @@ static int		client(const SOCKET sock)
 
 	FD_ZERO(&active_fds);
 	FD_SET(STDIN_FILENO, &active_fds);
-	FD_SET(sock, &active_fds);
+	FD_SET(*sock, &active_fds);
 	while (1)
 	{
 		readfds = active_fds;
-		if(select(sock + 1, &readfds, NULL, NULL, NULL) == -1)
+		if(select(*sock + 1, &readfds, NULL, NULL, NULL) == -1)
 		{
 			perror("select()");
 			exit(errno);
@@ -96,7 +96,7 @@ static int		client(const SOCKET sock)
 			buffer[ret - 1] = '\0';
 			write_server(sock, buffer, ret);
 		}
-		else if(FD_ISSET(sock, &readfds))
+		else if(FD_ISSET(*sock, &readfds))
 		{
 			memset(&buffer, '\0', BUFF_SIZE);
 			int n = read_server(sock, buffer);
@@ -107,17 +107,17 @@ static int		client(const SOCKET sock)
 			}
 			if (!strcmp("shutdown", buffer))
 			{
-				close(sock);
+				close(*sock);
 				write(STDOUT_FILENO, "Server shutdown\n", 16);
 				return (0);
 			}
 			write(STDOUT_FILENO, &buffer, strlen(buffer));
 		}
 	}
-	close(sock);
+	close(*sock);
 	return(0);
 error:
-	close(sock);
+	close(*sock);
 	return(errno);
 }
 
@@ -126,5 +126,5 @@ int	main(void)
 	SOCKET	sock;
 
 	sock = create_client();
-	return (client(sock));
+	return (client(&sock));
 }
