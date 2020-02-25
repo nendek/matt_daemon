@@ -6,9 +6,31 @@ Error::Error( int num_error, std::string str_error, int lvl_error ) throw():
 	return;
 }
 
+Error::Error( void ) throw(): _num_error(0), _str_error("default"), _lvl_error(0)
+{
+	return;
+}
+
 Error::~Error( void ) throw()
 {
 	return;
+}
+
+Error::Error ( Error const & src ) throw()
+{
+	*this = src;
+	return;
+}
+
+Error & Error::operator=( Error const & rhs ) throw()
+{
+	if (&rhs != this)
+	{
+		this->_num_error = rhs._num_error;
+		this->_str_error = rhs._str_error;
+		this->_lvl_error = rhs._lvl_error;
+	}
+	return (*this);
 }
 
 int		Error::getLvl( void ) const throw()

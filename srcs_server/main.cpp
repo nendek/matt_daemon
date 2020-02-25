@@ -1,35 +1,35 @@
 #include "matt_daemon.hpp"
 
-Tintin_reporter*	sig_log;
-int			sig_fd;
-int			sig_sock;
+Tintin_reporter*	g_log;
+int			g_fd;
+int			g_sock;
 
-static void		sig_handler(int signo)
+static void		sig_handler(const int signo)
 {
-	if (sig_fd != 0)
-		unlock_deamon(&sig_fd);
-	if (sig_sock != 0)
-		close(sig_sock);
-	if (sig_log != NULL)
+	if (g_fd != 0)
+		unlock_deamon(&g_fd);
+	if (g_sock != 0)
+		close(g_sock);
+	if (g_log != NULL)
 	{
-		sig_log->log(info, "Signal receive num:" + std::to_string(signo));
-		sig_log->log(info, "Server shutdown");
-		delete sig_log;
+		g_log->log(info, "Signal receive num:" + std::to_string(signo));
+		g_log->log(info, "Server shutdown");
+		delete g_log;
 	}
 	exit(EXIT_SUCCESS);
 }
 
 static void		sigsig(void)
 {
-		signal(SIGTSTP, SIG_IGN);
-		signal(SIGCONT, SIG_IGN);
-		signal(SIGTTIN, SIG_IGN);
-		signal(SIGTTOU, SIG_IGN);
-		signal(SIGHUP, SIG_IGN);
-		signal(SIGCHLD, SIG_DFL);
-		signal(SIGTERM, sig_handler);
-		signal(SIGINT, sig_handler);
-		signal(SIGQUIT, sig_handler);
+	signal(SIGTSTP, SIG_IGN);
+	signal(SIGCONT, SIG_IGN);
+	signal(SIGTTIN, SIG_IGN);
+	signal(SIGTTOU, SIG_IGN);
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGCHLD, SIG_DFL);
+	signal(SIGTERM, sig_handler);
+	signal(SIGINT, sig_handler);
+	signal(SIGQUIT, sig_handler);
 }
 
 int			main(void)
@@ -41,9 +41,9 @@ int			main(void)
 	DIR			*dir;
 	Tintin_reporter*	log;
 
-	sig_log = NULL;
-	sig_fd = 0;
-	sig_sock = 0;
+	g_log = NULL;
+	g_fd = 0;
+	g_sock = 0;
 	fd = 0;
 	try
 	{
@@ -55,7 +55,7 @@ int			main(void)
 		std::cerr << "Error: " << e.what() << std::endl;
 		return (EXIT_FAILURE);
 	}
-	sig_fd = fd;
+	g_fd = fd;
 	try
 	{
 		pid = fork();
@@ -110,7 +110,7 @@ int			main(void)
 			unlock_deamon(&fd);
 			return (EXIT_FAILURE);
 		}
-		sig_log = log;
+		g_log = log;
 		close(STDIN_FILENO);
 		close(STDOUT_FILENO);
 		close(STDERR_FILENO);
@@ -120,7 +120,7 @@ int			main(void)
 			delete log;
 			return (EXIT_FAILURE);
 		}
-		sig_sock = sock;
+		g_sock = sock;
 		log->log(info, "Server created, PID: " + std::to_string(getpid()));
 		run_server(&sock, log);
 		log->log(info, "Server shutdown");
