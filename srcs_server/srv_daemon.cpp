@@ -217,8 +217,6 @@ int			run_server(const SOCKET *sock, Tintin_reporter *log)
 					if (nb_client < MAXCLIENT && in_close == 0)
 					{
 						FD_SET(new_client, &active_fd);
-						if (max < new_client)
-							max = new_client;
 						nb_client++;
 						log->log(info, "Client connected");
 						add_sock_client(client, MAXCLIENT, new_client);
